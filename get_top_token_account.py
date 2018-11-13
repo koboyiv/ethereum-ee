@@ -59,7 +59,7 @@ def get_holder(address, supply):
             if len(r) == 4:
                 result.append(r)
 
-        time.sleep(1)
+        time.sleep(2)
 
     return result
 
