@@ -1,0 +1,11 @@
+pandas
+numpy
+web3
+websocket
+websockets
+beautifulsoup4
+tqdm
+sqlalchemy
+requests
+pymysql
+aiohttp
