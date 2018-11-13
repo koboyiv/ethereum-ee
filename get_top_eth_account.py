@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 import config
 
-engine = create_engine(config.DB.radars(), echo=False)
+engine = create_engine(config.DB.ethereum(), echo=False)
 
 
 async def http_v1_get(address_list):
@@ -63,7 +63,6 @@ def chunks(l, n):
 
 def get_address():
     result = []
-    tag_list = []
     s = requests.Session()
 
     for page in tqdm(range(1, 101)):
@@ -73,26 +72,14 @@ def get_address():
         td = soup.select('td[width="330px"]')
 
         for t in td:
-            if t.nextSibling.text:
-                tag_list.append({
-                        'address': t.text,
-                        'tag_name': t.nextSibling.text.split('_')[0],
-                        "color": 1
-                    })
-
             result.append(t.text)
 
-    return result, tag_list
+    return result
 
 
 if __name__ == '__main__':
-    all_address, tags = get_address()
+    all_address = get_address()
     print(len(all_address))
-
-    engine.execute(text("""
-        INSERT IGNORE INTO ethereum.tag(address, `name`, verified, `type`)
-        VALUES (:address, :tag_name, 1, :color)
-    """), tags)
 
     start = time.time()
     print(start)
