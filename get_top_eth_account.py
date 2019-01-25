@@ -3,17 +3,12 @@ import json
 import math
 import time
 
+from operator import itemgetter
 import aiohttp
 import requests
 import web3
 from bs4 import BeautifulSoup
-from sqlalchemy import create_engine, text
 from tqdm import tqdm
-
-import config
-
-engine = create_engine(config.DB.ethereum(), echo=False)
-
 
 async def http_v1_get(address_list):
     msg_list = []
@@ -21,13 +16,7 @@ async def http_v1_get(address_list):
 
     async with aiohttp.ClientSession() as session:
         async with session.ws_connect("ws://x.stockradars.co:8546/") as ws:
-            data = '{"jsonrpc": "2.0", "method": "eth_blockNumber", "params": [], "id": 1}'
-            await ws.send_str(data)
-            msg = await ws.receive()
-            res = msg.json()
-            block_number = web3.Web3.toInt(hexstr=res['result'])
-
-            data = '{"jsonrpc": "2.0", "method": "eth_getBalance", "params": ["%s", "latest"], "id": %s}'
+            data = '{"jsonrpc": "2.0", "method": "eth_getBalance", "params": ["%s", "0x13880"], "id": %s}'
 
             for index, address in enumerate(tqdm(address_list)):
                 await ws.send_str(data % (address, index))
@@ -39,19 +28,10 @@ async def http_v1_get(address_list):
         if 'result' in res:
             result.append({
                 'address': address_list[int(res['id'])],
-                'balance': '{}'.format(web3.Web3.fromWei(
-                    web3.Web3.toInt(hexstr=res['result']),
-                    'ether'
-                ))
+                'balance': web3.Web3.toInt(hexstr=res['result'])
             })
         else:
             print(res)
-
-    engine.execute(text("""
-        INSERT IGNORE INTO ethereum.balance (address, token, blockNumber, balance, `change`, `date`)
-        VALUES (:address, 'ETH', {}, :balance, null , current_date())
-    """.format(block_number)), result)
-
     return result
 
 
@@ -65,7 +45,7 @@ def get_address():
     result = []
     s = requests.Session()
 
-    for page in tqdm(range(1, 101)):
+    for page in tqdm(range(1, 2)):
         r = s.get('https://etherscan.io/accounts/{}?ps=100'.format(page))
         html = r.text
         soup = BeautifulSoup(html, 'html.parser')
@@ -92,5 +72,10 @@ if __name__ == '__main__':
 
     loop.close()
     print(time.time() - start)
+    result = []
+    for r in return_result:
+        result += r
 
-    insert_radars()
+    toplist = sorted(result, key=itemgetter('balance'), reverse=True)
+    print(toplist[0:101])
+
