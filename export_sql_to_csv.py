@@ -1,6 +1,5 @@
 from sqlalchemy import create_engine, text
 import config
-import datetime
 from tqdm import tqdm
 
 import pandas as pd
